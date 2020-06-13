@@ -1,7 +1,7 @@
-package com.dashboards.heating.service;
+package com.dashboards.heating.log.service;
 
-import com.dashboards.heating.domain.Device;
-import com.dashboards.heating.persistence.DeviceRepository;
+import com.dashboards.heating.log.domain.Log;
+import com.dashboards.heating.log.persistence.LogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,34 +12,33 @@ import reactor.core.publisher.Mono;
 import javax.validation.Valid;
 
 @RestController
-public class DeviceServiceImpl implements DeviceService {
-
-    private final DeviceRepository repository;
+public class LogServiceImpl implements LogService {
+    private final LogRepository repository;
 
     @Autowired
-    public DeviceServiceImpl(DeviceRepository repository) {
+    public LogServiceImpl(LogRepository repository) {
         this.repository = repository;
     }
 
     @Override
-    public Mono<ResponseEntity<Device>> findById(String id) {
+    public Mono<ResponseEntity<Log>> findById(String id) {
         return repository.findById(id).map(existingDevice -> ResponseEntity.ok(existingDevice))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @Override
-    public Mono<Device> create(@Valid Device device) {
-        return repository.save(device);
+    public Mono<Log> create(@Valid Log log) {
+        return repository.save(log);
     }
 
     @Override
-    public Mono<ResponseEntity<Device>> update(String id, @Valid Device device) {
+    public Mono<ResponseEntity<Log>> update(String id, @Valid Log log) {
         return repository.findById(id)
-                .flatMap(existingDevice -> {
-                    existingDevice.setCode(device.getCode());
-                    existingDevice.setName(device.getName());
-                    existingDevice.setDescription(device.getDescription());
-                    return repository.save(existingDevice);
+                .flatMap(existingLog -> {
+                    existingLog.setTimestamp(log.getTimestamp());
+                    existingLog.setReading(log.getReading());
+                    existingLog.setComment(log.getComment());
+                    return repository.save(existingLog);
                 })
                 .map(updatedDevice -> new ResponseEntity<>(updatedDevice, HttpStatus.OK))
                 .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -48,17 +47,15 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     public Mono<ResponseEntity<Void>> delete(@Valid String id) {
         return repository.findById(id)
-                .flatMap(existingDevice ->
-                        repository.delete(existingDevice)
+                .flatMap(existingLog ->
+                        repository.delete(existingLog)
                                 .then(Mono.just(new ResponseEntity<Void>(HttpStatus.OK)))
                 )
                 .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @Override
-    public Flux<Device> getAllDevices() {
+    public Flux<Log> getAllLogs() {
         return repository.findAll();
     }
-
-
 }
